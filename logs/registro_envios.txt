@@ -1,0 +1,55 @@
+FECHA | TELÉFONO | ESTADO | DETALLE
+-----------------------------------
+2025-03-27 20:11:19 | +573204886934 | Fallo | No se detectó confirmación
+2025-03-27 20:11:49 | +573204886934 | Fallo | No se detectó confirmación
+2025-03-27 20:12:10 | +573132832558 | Éxito | Envío confirmado
+2025-03-27 20:12:38 | +573103332475 | Error | Error: Message: no such window: target window already closed
+from unknown error: web view not found
+  (Session info: chrome=134.0.6998.167)
+Stacktrace:
+	GetHandleVerifier [0x00A9C7F3+24435]
+	(No symbol) [0x00A22074]
+	(No symbol) [0x008F06E3]
+	(No symbol) [0x008CF83E]
+	(No symbol) [0x0096455E]
+	(No symbol) [0x0097EB19]
+	(No symbol) [0x0095D5B6]
+	(No symbol) [0x0092C54F]
+	(No symbol) [0x0092D894]
+	GetHandleVerifier [0x00DA70A3+3213347]
+	GetHandleVerifier [0x00DBB0C9+3295305]
+	GetHandleVerifier [0x00DB558C+3271948]
+	GetHandleVerifier [0x00B37360+658144]
+	(No symbol) [0x00A2B27D]
+	(No symbol) [0x00A28208]
+	(No symbol) [0x00A283A9]
+	(No symbol) [0x00A1AAC0]
+	BaseThreadInitThunk [0x75C45D49+25]
+	RtlInitializeExceptionChain [0x77A9CE3B+107]
+	RtlGetAppContainerNamedObjectPath [0x77A9CDC1+561]
+
+2025-03-27 20:12:48 | +573238109564 | Error | Error: Message: no such window: target window already closed
+from unknown error: web view not found
+  (Session info: chrome=134.0.6998.167)
+Stacktrace:
+	GetHandleVerifier [0x00A9C7F3+24435]
+	(No symbol) [0x00A22074]
+	(No symbol) [0x008F06E3]
+	(No symbol) [0x008CF83E]
+	(No symbol) [0x0096455E]
+	(No symbol) [0x0097EB19]
+	(No symbol) [0x0095D5B6]
+	(No symbol) [0x0092C54F]
+	(No symbol) [0x0092D894]
+	GetHandleVerifier [0x00DA70A3+3213347]
+	GetHandleVerifier [0x00DBB0C9+3295305]
+	GetHandleVerifier [0x00DB558C+3271948]
+	GetHandleVerifier [0x00B37360+658144]
+	(No symbol) [0x00A2B27D]
+	(No symbol) [0x00A28208]
+	(No symbol) [0x00A283A9]
+	(No symbol) [0x00A1AAC0]
+	BaseThreadInitThunk [0x75C45D49+25]
+	RtlInitializeExceptionChain [0x77A9CE3B+107]
+	RtlGetAppContainerNamedObjectPath [0x77A9CDC1+561]
+

@@ -9,9 +9,17 @@ from app.core.whatsapp_bot import configurar_navegador, esperar_inicio_sesion, e
 class MainWindow(ctk.CTk):
     def __init__(self):
         super().__init__()
+
+        # Configurar rutas
+        self.root_path = os.path.dirname(os.path.dirname(os.path.dirname(__file__)))
+        self.assets_path = os.path.join(self.root_path, "assets")
+        self.logs_path = os.path.join(self.root_path, "logs")
         
-        self.title("WhatsApp Automation")
+        self.title("Messaging Automation Pro")
         self.geometry("1200x800")
+        
+        # Inicializar variables
+        self.df = None
         
         # Configurar tema
         self.configure_theme()
@@ -50,13 +58,33 @@ class MainWindow(ctk.CTk):
         self.message_editor = MessageEditor(main_panel)
         self.message_editor.pack(fill="x", pady=5)
         
-        # Botón de envío
-        self.start_btn = ctk.CTkButton(
-            main_panel,
-            text="Iniciar Envío",
-            command=self.start_process
+        # Frame para botones de envío
+        self.buttons_frame = ctk.CTkFrame(main_panel)
+        self.buttons_frame.pack(pady=5)
+        
+        # Botón WhatsApp
+        self.whatsapp_btn = ctk.CTkButton(
+            self.buttons_frame,
+            text="Enviar por WhatsApp 📱",
+            command=self.start_whatsapp_process,
+            width=200,
+            height=40,
+            fg_color="#25D366",  # Color verde WhatsApp
+            hover_color="#128C7E"
         )
-        self.start_btn.pack(pady=5)
+        self.whatsapp_btn.pack(side="left", padx=5)
+        
+        # Botón SMS
+        self.sms_btn = ctk.CTkButton(
+            self.buttons_frame,
+            text="Enviar por SMS 💬",
+            command=self.start_sms_process,
+            width=200,
+            height=40,
+            fg_color="#4A90E2",  # Color azul para SMS
+            hover_color="#357ABD"
+        )
+        self.sms_btn.pack(side="left", padx=5)
         
     def select_excel_file(self):
         filename = filedialog.askopenfilename(
@@ -72,10 +100,9 @@ class MainWindow(ctk.CTk):
             except Exception as e:
                 messagebox.showerror("Error", f"Error al cargar el archivo: {str(e)}")
                 print(f"Error detallado: {e}")  # Para debugging
-            
-    def start_process(self):
-        """Procesa y envía los mensajes"""
-        # Obtener datos de la tabla
+
+    def get_message_data(self):
+        """Obtiene los datos y el mensaje a enviar"""
         data = []
         for item in self.table.table.get_children():
             values = self.table.table.item(item)["values"]
@@ -85,16 +112,23 @@ class MainWindow(ctk.CTk):
         
         if not data:
             messagebox.showerror("Error", "No hay datos para enviar")
-            return
+            return None, None
             
         message_template = self.message_editor.editor.get("1.0", "end-1c")
         if not message_template.strip():
             messagebox.showerror("Error", "El mensaje está vacío")
+            return None, None
+            
+        return data, message_template
+            
+    def start_whatsapp_process(self):
+        """Inicia el proceso de envío por WhatsApp"""
+        data, message_template = self.get_message_data()
+        if not data or not message_template:
             return
-        
-        # Nuevo diálogo de confirmación
-        confirm = messagebox.askyesno(
-            "Confirmar Envío",
+            
+        if messagebox.askyesno(
+            "Confirmar Envío por WhatsApp",
             "¿Está seguro de los datos ingresados?\n\n" +
             "Mensaje a enviar:\n" +
             f"{message_template}\n\n" +
@@ -102,9 +136,7 @@ class MainWindow(ctk.CTk):
             "Si está seguro presione 'Sí' para iniciar el envío\n" +
             "Si necesita hacer cambios presione 'No'",
             icon="warning"
-        )
-        
-        if confirm:
+        ):
             try:
                 driver = configurar_navegador()
                 if esperar_inicio_sesion(driver):
@@ -136,3 +168,11 @@ class MainWindow(ctk.CTk):
             finally:
                 if 'driver' in locals():
                     driver.quit()
+
+    def start_sms_process(self):
+        """Inicia el proceso de envío por SMS"""
+        messagebox.showinfo(
+            "Próximamente",
+            "La función de envío por SMS estará disponible próximamente.\n" +
+            "Por favor, use la opción de WhatsApp por ahora."
+        )

@@ -66,18 +66,32 @@ def esperar_inicio_sesion(driver):
 def verificar_envio(driver, timeout=10):
     """Verifica si el mensaje se envió correctamente"""
     try:
+        # Esperar a que aparezca cualquier indicador de estado
         WebDriverWait(driver, timeout).until(
-            lambda d: d.find_elements(By.XPATH, '//span[@data-icon="msg-check"]') or
-                     d.find_elements(By.XPATH, '//span[@data-icon="msg-time"]')
+            lambda d: (
+                d.find_elements(By.XPATH, '//span[@data-icon="msg-check"]') or
+                d.find_elements(By.XPATH, '//span[@data-icon="msg-dblcheck"]') or
+                d.find_elements(By.XPATH, '//span[@data-icon="msg-time"]') or
+                d.find_elements(By.XPATH, '//div[contains(@class, "error")]')
+            )
         )
         
-        if driver.find_elements(By.XPATH, '//span[@data-icon="msg-check"]'):
-            return True, "Envío confirmado"
+        # Verificar estado del mensaje
+        if driver.find_elements(By.XPATH, '//span[@data-icon="msg-dblcheck"]'):
+            return True, "Mensaje entregado"
+        elif driver.find_elements(By.XPATH, '//span[@data-icon="msg-check"]'):
+            return True, "Mensaje enviado"
         elif driver.find_elements(By.XPATH, '//span[@data-icon="msg-time"]'):
-            return False, "En cola (no confirmado)"
+            return False, "Mensaje en cola"
+        elif driver.find_elements(By.XPATH, '//div[contains(@class, "error")]'):
+            return False, "Número no disponible en WhatsApp"
+            
         return False, "Estado desconocido"
             
     except TimeoutException:
+        # Verificar si hay error de número inválido
+        if driver.find_elements(By.XPATH, '//div[contains(text(), "Phone number shared via url is invalid")]'):
+            return False, "Número inválido"
         return False, "No se detectó confirmación"
 
 def enviar_mensaje(driver, telefono, mensaje):
@@ -87,12 +101,33 @@ def enviar_mensaje(driver, telefono, mensaje):
         driver.get(f"https://web.whatsapp.com/send?phone={telefono}")
         time.sleep(5)
         
-        # 2. Localización del campo de mensaje
-        msg_box = WebDriverWait(driver, 20).until(
-            EC.presence_of_element_located((By.XPATH, '//div[@contenteditable="true"][@data-tab="10"]'))
-        )
+        # 2. Verificar si el número existe en WhatsApp
+        error_elements = driver.find_elements(By.XPATH, '//div[contains(text(), "Phone number shared via url is invalid")]')
+        if error_elements:
+            print(f"❌ {telefono} - Número no disponible en WhatsApp")
+            return {
+                "fecha": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+                "telefono": telefono,
+                "estado": "Error",
+                "detalle": "Número no disponible en WhatsApp",
+                "confirmado": False
+            }
         
-        # 3. Envío seguro
+        # 3. Localización del campo de mensaje
+        try:
+            msg_box = WebDriverWait(driver, 20).until(
+                EC.presence_of_element_located((By.XPATH, '//div[@contenteditable="true"][@data-tab="10"]'))
+            )
+        except TimeoutException:
+            return {
+                "fecha": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+                "telefono": telefono,
+                "estado": "Error",
+                "detalle": "Número no existe en WhatsApp",
+                "confirmado": False
+            }
+        
+        # 4. Envío seguro
         msg_box.click()
         msg_box.clear()
         for line in mensaje.split('\n'):
@@ -101,7 +136,7 @@ def enviar_mensaje(driver, telefono, mensaje):
         msg_box.send_keys(Keys.ENTER)
         time.sleep(3)
         
-        # 4. Verificación y registro
+        # 5. Verificación y registro
         status, detalle = verificar_envio(driver)
         registro = {
             "fecha": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),

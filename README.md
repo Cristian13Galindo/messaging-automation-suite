@@ -36,7 +36,7 @@ Aplicación de escritorio para la automatización de envío de mensajes personal
 
 1. Clone el repositorio:
 ```bash
-git clone (https://github.com/Cristian13Galindo/messaging-automation-suite.git)
+git clone https://github.com/Cristian13Galindo/messaging-automation-suite.git
 ```
 
 2. Instale las dependencias:

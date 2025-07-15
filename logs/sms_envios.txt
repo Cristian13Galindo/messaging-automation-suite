@@ -1,0 +1,6 @@
+FECHA | TELÉFONO | ESTADO | DETALLE
+--------------------------------------------------------------------------------
+2025-03-30 01:34:19 | +573204886934 | Éxito | SMS enviado correctamente
+2025-03-30 01:34:19 | +573144708305 | Éxito | SMS enviado correctamente
+2025-03-30 01:34:19 | +573132832558 | Éxito | SMS enviado correctamente
+2025-03-30 01:34:19 | +573238109564 | Éxito | SMS enviado correctamente

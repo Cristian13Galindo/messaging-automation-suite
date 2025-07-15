@@ -4,7 +4,10 @@ import pandas as pd
 import os
 from .components.dynamic_table import DynamicTable
 from .components.message_editor import MessageEditor
+from .components.country_selector import CountrySelector
 from app.core.whatsapp_bot import configurar_navegador, esperar_inicio_sesion, enviar_mensaje, guardar_registro
+from app.core.sms_sender import SMSService
+
 
 class MainWindow(ctk.CTk):
     def __init__(self):
@@ -36,15 +39,26 @@ class MainWindow(ctk.CTk):
         top_panel = ctk.CTkFrame(self)
         top_panel.pack(fill="x", padx=10, pady=5)
         
+        # Primera fila: selector de archivo
+        file_frame = ctk.CTkFrame(top_panel)
+        file_frame.pack(fill="x", pady=5)
+        
         self.select_file_btn = ctk.CTkButton(
-            top_panel, 
+            file_frame, 
             text="Importar Excel",
             command=self.select_excel_file
         )
         self.select_file_btn.pack(side="left", padx=5)
         
-        self.file_label = ctk.CTkLabel(top_panel, text="No se ha seleccionado archivo")
+        self.file_label = ctk.CTkLabel(file_frame, text="No se ha seleccionado archivo")
         self.file_label.pack(side="left", padx=5)
+        
+        # Segunda fila: selector de país
+        country_frame = ctk.CTkFrame(top_panel)
+        country_frame.pack(fill="x", pady=5)
+        
+        self.country_selector = CountrySelector(country_frame)
+        self.country_selector.pack(side="left", padx=5)
         
         # Panel principal
         main_panel = ctk.CTkFrame(self)
@@ -126,7 +140,7 @@ class MainWindow(ctk.CTk):
         data, message_template = self.get_message_data()
         if not data or not message_template:
             return
-            
+        
         if messagebox.askyesno(
             "Confirmar Envío por WhatsApp",
             "¿Está seguro de los datos ingresados?\n\n" +
@@ -138,13 +152,26 @@ class MainWindow(ctk.CTk):
             icon="warning"
         ):
             try:
+                # Obtener el código de país seleccionado
+                country_code = self.country_selector.get_country_code()
+                
                 driver = configurar_navegador()
                 if esperar_inicio_sesion(driver):
-                    registros = []
+                    registros = []  # Asegurarse que 'registros' está definida antes de cualquier excepción
+                    
                     for row in data:
                         telefono = str(row["TELEFONO"]).strip()
-                        if not telefono.startswith("+"):
-                            telefono = f"+{telefono}"
+                        
+                        # Eliminar cualquier punto decimal
+                        if telefono.endswith('.0'):
+                            telefono = telefono[:-2]
+                        
+                        # Eliminar cualquier carácter no numérico excepto el +
+                        telefono = ''.join(c for c in telefono if c.isdigit() or c == '+')
+                        
+                        # Verificar si ya tiene código de país o agregarle el seleccionado
+                        if not telefono.startswith('+'):
+                            telefono = f"{country_code}{telefono}"
                         
                         try:
                             mensaje = message_template.format(**row)
@@ -155,14 +182,15 @@ class MainWindow(ctk.CTk):
                                 "Error", 
                                 f"Variable {str(e)} no encontrada en los datos"
                             )
+                            driver.quit()  # Cerrar el navegador antes de salir
                             return
-                    
-                    exitosos = sum(1 for r in registros if r['confirmado'])
-                    guardar_registro(registros)
-                    messagebox.showinfo(
-                        "Completado",
-                        f"Mensajes enviados: {exitosos}/{len(data)}"
-                    )
+                
+                exitosos = sum(1 for r in registros if r['confirmado'])
+                guardar_registro(registros)
+                messagebox.showinfo(
+                    "Completado",
+                    f"Mensajes enviados: {exitosos}/{len(data)}"
+                )
             except Exception as e:
                 messagebox.showerror("Error", str(e))
             finally:
@@ -171,8 +199,28 @@ class MainWindow(ctk.CTk):
 
     def start_sms_process(self):
         """Inicia el proceso de envío por SMS"""
-        messagebox.showinfo(
-            "Próximamente",
-            "La función de envío por SMS estará disponible próximamente.\n" +
-            "Por favor, use la opción de WhatsApp por ahora."
-        )
+        data, message_template = self.get_message_data()
+        if not data or not message_template:
+            return
+        
+        if messagebox.askyesno(
+            "Confirmar Envío por SMS",
+            "¿Está seguro de los datos ingresados?\n\n" +
+            "Mensaje a enviar:\n" +
+            f"{message_template}\n\n" +
+            f"Total de destinatarios: {len(data)}\n\n" +
+            "Si está seguro presione 'Sí' para iniciar el envío\n" +
+            "Si necesita hacer cambios presione 'No'",
+            icon="warning"
+        ):
+            try:
+                # Para el caso de SMS, también usamos el selector de país
+                country_code = self.country_selector.get_country_code()
+                
+                messagebox.showinfo(
+                    "Próximamente",
+                    "La función de envío por SMS estará disponible próximamente.\n" +
+                    "Por favor, use la opción de WhatsApp por ahora."
+                )
+            except Exception as e:
+                messagebox.showerror("Error", str(e))

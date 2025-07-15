@@ -48,14 +48,36 @@ class DynamicTable(ctk.CTkFrame):
         self.add_row_btn.pack(side="left", padx=5)
 
     def load_excel(self, filename):
-        """Carga datos desde Excel y muestra vista previa"""
+        """Carga datos desde un archivo Excel"""
         try:
-            # Cargar datos
-            df = pd.read_excel(filename)
+            # Leer Excel 
+            self.df = pd.read_excel(filename)
             
-            # Convertir nombres de columnas a mayúsculas
-            df.columns = df.columns.str.upper()
+            # Estandarizar nombres de columnas (convertir a mayúsculas)
+            self.df.columns = [col.upper() for col in self.df.columns]
             
+            # Asegurarnos que TELEFONO existe y convertirlo a string
+            if "TELEFONO" in self.df.columns:
+                self.df["TELEFONO"] = self.df["TELEFONO"].astype(str)
+                # Corregir escape sequence usando raw string
+                self.df["TELEFONO"] = self.df["TELEFONO"].replace(r'\.0$', '', regex=True)
+            
+            # Buscar otras columnas que podrían ser teléfono
+            phone_columns = [col for col in self.df.columns if "TELEFONO" in col or "PHONE" in col or "TEL" in col]
+            for col in phone_columns:
+                if col != "TELEFONO":  # Ya procesamos TELEFONO arriba
+                    self.df[col] = self.df[col].astype(str)
+                    self.df[col] = self.df[col].replace(r'\.0$', '', regex=True)
+            
+            # Continuar con el código existente
+            self.load_data(self.df)
+            print(f"Datos cargados: {len(self.df)} filas")
+        except Exception as e:
+            print(f"Error al cargar Excel: {str(e)}")
+
+    def load_data(self, df):
+        """Carga los datos en la tabla desde un DataFrame de pandas"""
+        try:
             # Configurar columnas
             self.table["columns"] = tuple(df.columns)
             self.table.column("#0", width=0, stretch=False)  # Ocultar primera columna
@@ -77,7 +99,7 @@ class DynamicTable(ctk.CTkFrame):
             print(f"Datos cargados: {len(df)} filas")  # Para debugging
             
         except Exception as e:
-            print(f"Error en load_excel: {str(e)}")  # Para debugging
+            print(f"Error en load_data: {str(e)}")  # Para debugging
             raise  # Re-lanzar la excepción para manejo superior
 
     def add_empty_row(self):

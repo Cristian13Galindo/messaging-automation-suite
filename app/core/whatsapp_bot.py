@@ -118,79 +118,70 @@ def verificar_envio(driver, timeout=10):
         return False, "No se detectó confirmación"
 
 def enviar_mensaje(driver, telefono, mensaje):
-    """Envía un mensaje por WhatsApp con optimización de velocidad"""
+    """Envía un mensaje por WhatsApp manteniendo los saltos de línea"""
     try:
         # Navegación al chat
         print(f"🔄 Navegando al chat de {telefono}...")
         driver.get(f"https://web.whatsapp.com/send?phone={telefono}")
         
-        # OPTIMIZACIÓN 1: Espera dinámica en lugar de tiempo fijo
         print("⏳ Esperando carga de chat...")
-        # Esperar por el campo de texto directamente (indicador clave de que el chat está listo)
-        try:
-            # Selector directo y simple pero específico para el campo de texto del chat
-            campo_texto = WebDriverWait(driver, 15).until(
-                EC.element_to_be_clickable((By.XPATH, '//footer//div[@role="textbox"]'))
-            )
-            print("✅ Chat cargado correctamente")
-            
-            # OPTIMIZACIÓN 2: Acciones inmediatas sin esperas adicionales
-            # Hacer foco en el campo y escribir inmediatamente
-            driver.execute_script("arguments[0].click();", campo_texto)
-            
-            # OPTIMIZACIÓN 3: Escribir mensaje sin pausa
-            print("📝 Escribiendo mensaje...")
-            campo_texto.send_keys(mensaje)
-            
-            # OPTIMIZACIÓN 4: Enviar inmediatamente
-            campo_texto.send_keys(Keys.ENTER)
-            print(f"✅ {telefono} - Mensaje enviado")
-            
-            # Espera mínima para asegurar que se complete el envío
-            time.sleep(1.5)
-            
-            return {
-                "fecha": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
-                "telefono": telefono,
-                "estado": "Éxito",
-                "detalle": "Mensaje enviado",
-                "confirmado": True
-            }
-            
-        except Exception as e:
-            # Si falla el método optimizado, intentar con el método tradicional
-            print(f"⚠️ Método rápido falló, intentando método alternativo: {str(e)}")
-            
-            # Manejar cualquier ventana emergente
-            manejar_ventanas_emergentes(driver)
-            
-            # Dar tiempo adicional si el método rápido falló
-            time.sleep(5)
-            
-            # Buscar nuevamente el campo de texto
-            campo_texto = WebDriverWait(driver, 10).until(
-                EC.element_to_be_clickable((By.XPATH, 
-                    '//footer//div[@role="textbox" and @contenteditable="true"]'
-                ))
-            )
-            
-            # Intentar enviar el mensaje con el método tradicional
-            campo_texto.click()
-            time.sleep(0.5)
-            campo_texto.send_keys(mensaje)
-            time.sleep(0.5)
-            campo_texto.send_keys(Keys.ENTER)
-            time.sleep(2)
-            
-            print(f"✅ {telefono} - Mensaje enviado (método alternativo)")
-            return {
-                "fecha": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
-                "telefono": telefono,
-                "estado": "Éxito",
-                "detalle": "Mensaje enviado (método alternativo)",
-                "confirmado": True
-            }
+        # Esperar por el campo de texto
+        campo_texto = WebDriverWait(driver, 15).until(
+            EC.element_to_be_clickable((By.XPATH, '//footer//div[@role="textbox"]'))
+        )
+        print("✅ Chat cargado correctamente")
+        
+        # Hacer clic para asegurarnos de que está activo
+        campo_texto.click()
+        time.sleep(0.5)
+        
+        # MÉTODO MEJORADO: Usar ActionChains para más control sobre las teclas
+        print("📝 Escribiendo mensaje...")
+        
+        # Importar ActionChains si aún no está importado
+        from selenium.webdriver.common.action_chains import ActionChains
+        actions = ActionChains(driver)
+        
+        # Dividir el mensaje en líneas
+        lineas = mensaje.strip().split('\n')
+        
+        # Escribir cada línea con Shift+Enter entre ellas
+        for i, linea in enumerate(lineas):
+            if linea.strip():  # Solo procesar líneas no vacías
+                # Escribir la línea actual carácter por carácter
+                for caracter in linea:
+                    actions.send_keys(caracter)
+                    actions.perform()
+                    # Breve pausa para simular escritura natural
+                    time.sleep(0.01)
                 
+            # Si no es la última línea, agregar Shift+Enter
+            if i < len(lineas) - 1:
+                # Presionar Shift+Enter juntos para crear un salto de línea
+                actions.key_down(Keys.SHIFT)
+                actions.send_keys(Keys.ENTER)
+                actions.key_up(Keys.SHIFT)
+                actions.perform()
+                time.sleep(0.1)
+        
+        # Pequeña pausa antes de enviar
+        time.sleep(0.5)
+        
+        # Enviar el mensaje
+        actions.send_keys(Keys.ENTER)
+        actions.perform()
+        
+        print(f"✅ {telefono} - Mensaje enviado")
+        time.sleep(1.5)
+        
+        return {
+            "fecha": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+            "telefono": telefono, 
+            "estado": "Éxito",
+            "detalle": "Mensaje enviado",
+            "confirmado": True
+        }
+            
     except Exception as e:
         print(f"❌ {telefono} - Error: {str(e)}")
         driver.save_screenshot(f"error_{telefono}.png")

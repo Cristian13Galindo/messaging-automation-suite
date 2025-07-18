@@ -11,7 +11,7 @@ from webdriver_manager.chrome import ChromeDriverManager
 from selenium.common.exceptions import NoSuchElementException, TimeoutException
 from datetime import datetime
 
-# Configuración
+# Configuración de constantes
 ARCHIVO_EXCEL = "clientes.xlsx"
 ARCHIVO_ERRORES = "registro_envios.txt"
 MENSAJE_BASE = """
